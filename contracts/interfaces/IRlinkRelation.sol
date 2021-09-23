@@ -4,66 +4,12 @@ pragma solidity ^0.8.0;
 
 interface IRlinkRelation {
     /**
-     * @dev query seconds of a month
-     * @return seconds of a month
-     */
-    function monthScale() external pure returns(uint256);
-
-    /**
-     * @dev query stake base amount,stake monthes formula: (1 + usingMonthes) * usingMonthes / 2 * stakeBase
-     * @return stake base amount
-     */
-    function stakeBase() external pure returns(uint256);
-
-    /**
-     * @dev query stake for month limit
-     * @return stake for month limit
-     */
-    function maxStakeMonth() external view returns(uint256);
-
-    /**
-     * @dev query staked limit
-     * @return stake limit
-     */
-    function maxStakeAmount() external view returns(uint256);
-
-    /**
-     * @dev query global trial seconds
-     * @return seconds of global trial
-     */
-    function globalTrial() external view returns(uint256);
-
-    /**
-     * @dev query stake enable status
-     * @return stake enable status
-     */
-    function stakeEnabled() external view returns(bool);
-
-    /**
-     * @dev query withdraw enable status
-     * @return withdraw enable status
-     */
-    function withdrawEnabled() external view returns(bool);
-
-    /**
-     * @dev query burn expired stake enable status
-     * @return burn expired stake enable status
-     */
-    function burnEnabled() external view returns(bool);
-
-    /**
-     * @dev query stakingToken address
-     * @return burn stakingToken address
-     */
-    function stakingToken() external view returns(address);    
-
-    /**
      * @dev add address relation
      * @param _child: address of the child
      * @param _parent: address of the parent
-     * @return whether or not the add relation succeeded
+     * @return reward rlt amount for add relation
      */
-    function addRelation(address _child, address _parent) external returns(bool);
+    function addRelation(address _child, address _parent) external returns(uint256);
 
     /**
      * @dev query child and parent is associated
@@ -81,73 +27,25 @@ interface IRlinkRelation {
     function parentOf(address account) external view returns(address);
 
     /**
-     * @dev stake stakingToken to rlink relation
-     * @param forAccount: address of stake for
-     * @param amount: stake amount
-     * @return whether or not the stake succeeded
-     */
-    function stake(address forAccount,uint256 amount) external returns(bool);
-
-    /**
-     * @dev query address staked amount
-     * @param account: address of to be queried
-     * @return staked amount
-     */
-    function stakeOf(address account) external view returns(uint256);
-
-    /**
-     * @dev withdraw stake
-     * require withdraw is enabled
-     * @param to: withdraw to address
-     */
-    function withdraw(address to) external;
-
-    /**
-     * @dev burn expired stake of account
-     * require burn expired stake is enabled
-     * @param account: address of expired stake
-     */
-    function burnExpiredStake(address account) external;
-
-    /**
-     * @dev distribute token
-     * you must approve bigger than 'amount' allowance of token for rlink relation contract before call
-     * @param token: token address to be distributed
-     * @param to: to address
-     * @param incentiveRate: numerator of incentive rate,denominator is 1e18
-     * @param parentRate: numerator of parent rewards rate,denominator is 1e18
-     * @param grandpaRate: numerator of grandpa rewards rate,denominator is 1e18
-     */
+    * @dev distribute token
+    * you must approve bigger than 'amount' allowance of token for rlink relation contract before call
+    * require (incentiveAmount + parentAmount + grandpaAmount) <= amount
+    * @param token: token address to be distributed
+    * @param to: to address
+    * @param amount: total amount of distribute
+    * @param incentiveAmount: amount of incentive reward
+    * @param parentAmount: amount of parent reward
+    * @param grandpaAmount: amount of grandpa reward
+    * @return distributedAmount : distributed token amount
+    */
     function distribute(
         address token,
         address to,
         uint256 amount,
-        uint256 incentiveRate,
-        uint256 parentRate,
-        uint256 grandpaRate
+        uint256 incentiveAmount,
+        uint256 parentAmount,
+        uint256 grandpaAmount
     ) external returns(uint256 distributedAmount);
-
-    /**
-     * @dev query trial expire at 
-     * require burn expired stake is enabled
-     * @param account: the address of to be queried
-     * @return trial expire at of queried address
-     */
-    function trialExpireAt(address account) external view returns(uint256);
-
-    /**
-     * @dev query expire at
-     * require burn expired stake is enabled
-     * @param account: the address of to be queried
-     * @return expire at of queried address
-     */
-    function expireAt(address account) external view returns(uint256);
-
-    /**
-     * @dev query call function 'distribute' fee (default is 0)
-     * @return call function 'distribute' fee
-     */
-    function distributeFee() external view returns(uint256);
 
     /**
      * @dev query call add relation rewards amount 
@@ -170,9 +68,6 @@ interface IRlinkRelation {
     //an event thats emitted when new relation added
     event AddedRelation(address child,address parent);
 
-    //an event thats emitted when staked
-    event Staked(address forAccount,uint256 amount);
-
     //an event thats emitted when token distributed
-    event Distributed(address sender,address token, address to,uint256 toAmount,uint256 parantAmount, uint256 grandpaAmount);
+    event Distributed(address sender,address token, address to,uint256 toAmount,address parent, uint256 parantAmount,address grandpa, uint256 grandpaAmount);
 }

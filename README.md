@@ -10,4 +10,4 @@ Rlink aims to become the parallel chain to record the relationship between addre
 ### Core services
 Invitation relationship: This module records the invitation relationship between all addresses using a Hash map, and provides the function of querying and writing the associated address of any address.  Realize infinite level address associated record.  
 Distribution: This module provides the function of distributing tokens for DAPP. By calling this module, DAPP can easily realize the distribution of tokens to a specified address and its associated address at a specified rate.  Supports multi-level associated address distribution  
-![architecture](https://raw.githubusercontent.com/Rlinknetwork/rlink/main/docs/architecture.png)
+![architecture](https://github.com/Rlinkwork/rlink/blob/f23465352ea1e046aa55df191e4dc44855cb8fa9/docs/architecture.png?raw=true)
