@@ -1,14 +1,14 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.0;
 
 import './libs/SafeMath.sol';
 import './libs/SafeERC20.sol';
-import './libs/Pausable.sol';
 import './libs/Ownable.sol';
+import './libs/Pausable.sol';
 import './interfaces/IRlinkRelation.sol';
 
-contract RlinkRelation is Ownable,Pausable,IRlinkRelation {
+contract RlinkRelation is Ownable,IRlinkRelation,Pausable {
     using Address for address;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -16,21 +16,25 @@ contract RlinkRelation is Ownable,Pausable,IRlinkRelation {
     mapping(address=>address) private _parents;
     uint256 public override bindReward;
     uint256 public override mintedRewards;
-    uint256 public override remainingRewards;
-    bool public verifyChild = false;      
+    uint256 public override remainingRewards;  
     address public immutable rlt;
 
     event BindRewardChanged(address sender, uint256 oldReward,uint256 newReward);
     event AddedReward(uint256 amount);
-    event VerifyChildChanged(address sender,bool enableStatus);
 
     modifier onlyGovernance(){
         require(owner() == _msgSender(), "Rlink: caller is not the governance");
         _;
     }
 
-    constructor(address _rlt){
+    constructor(
+        address _rlt,
+        address _timelockController
+    ){
+        require(_rlt != address(0),"Rlink: _rlt address can not be address 0");
+        require(_timelockController != address(0) && Address.isContract(_timelockController),"Rlink: _timelockController address can not be address 0");
         rlt = _rlt;
+        transferOwnership(_timelockController);
     }
 
     function isParent(address child,address parent) external view override returns(bool) {
@@ -46,7 +50,7 @@ contract RlinkRelation is Ownable,Pausable,IRlinkRelation {
         require(_child != address(0) && _parent != address(0),"Rlink::addRelation: child or parent can not be address 0");
         require(_parents[_child] == address(0),"Rlink::addRelation: child already has parent");
         require(_parents[_parent] != _child,"Rlink::addRelation: parent can not be descendant of child");
-        require(!verifyChild || tx.origin == _child,"Rlink::addRelation: child must be tx origin");
+        require(tx.origin == _child,"Rlink::addRelation: child must be tx origin");
 
         _parents[_child] = _parent;
         uint bindReward_ = bindReward;
@@ -70,7 +74,7 @@ contract RlinkRelation is Ownable,Pausable,IRlinkRelation {
     ) external override whenNotPaused returns(uint256 distributedAmount) {
         require(amount > 0,"Rlink::distribute:  can not distribute 0");
         require(to != address(0),"Rlink::distribute:  to address can not be address 0");
-        require(incentiveAmount.add(parentAmount).add(grandpaAmount) <= amount,"Rlink::distribute: sum of the rates must less than 1e18");
+        require(incentiveAmount.add(parentAmount).add(grandpaAmount) <= amount,"Rlink::distribute: sum of incentiveAmount,parentAmount,grandpaAmount must less than or equals amount");
 
         address sender = msg.sender;
         IERC20 token_ = IERC20(token);
@@ -117,12 +121,6 @@ contract RlinkRelation is Ownable,Pausable,IRlinkRelation {
         remainingRewards = remainingRewards.add(addAmount);
 
         emit AddedReward(addAmount);
-    }
-
-    function setVerifyChild(bool isEnable) external onlyGovernance {
-        verifyChild=isEnable;
-
-        emit VerifyChildChanged(msg.sender,isEnable);
     }
 
     function pause() external onlyGovernance {
